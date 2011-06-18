@@ -1,0 +1,12 @@
+(detector
+    (extension haml)
+    (extension sass))
+
+(folding
+    (start [^\s*([-%#\:\.\w\=].*)\s$])
+    (stop ^\s*$))
+
+(shell-variables
+    (TM_COMMENT_START [/ ]))
+
+(comment.line [/ ])

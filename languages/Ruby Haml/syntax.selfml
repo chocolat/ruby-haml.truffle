@@ -1,0 +1,142 @@
+(root text.haml
+    (zone
+        (inner-identifier string.quoted.double.ruby)
+        (start
+            (regex ^\s*==))
+        (end
+            (regex $\n?))
+        (subzones
+            (include @interpolated_ruby)))
+    (zone meta.prolog.haml
+        (match
+            (regex [^(!!!)($|\s.*)]
+                (1 punctuation.definition.prolog.haml))))
+    (zone comment.line.slash.haml
+        (match
+            (regex [^ *(/)\s*\S.*$\n?]
+                (1 punctuation.section.comment.haml))))
+    (zone comment.block.haml
+        (start
+            (regex [^( *)(/)\s*$]
+                (2 punctuation.section.comment.haml)))
+        (end
+            (regex [^(?!\1  )]))
+        (subzones
+            (include text.haml)))
+    (zone
+        (start
+            (regex [^\s*(?:((%)([\w:]+))|(?=\.|#))]
+                (3 entity.name.tag.haml)
+                (1 meta.tag.haml)
+                (2 punctuation.definition.tag.haml)))
+        (end
+            (regex `$|(?!\.|#|\{|\[|=|-|~|/)`
+                (3 entity.name.tag.haml)
+                (1 meta.tag.haml)
+                (2 punctuation.definition.tag.haml)))
+        (subzones
+            (zone
+                (inner-identifier string.quoted.double.ruby)
+                (start ==)
+                (end
+                    (regex $\n?))
+                (subzones
+                    (include @interpolated_ruby)))
+            (zone entity.name.tag.class.haml
+                (match
+                    (regex [\.[\w-]+])))
+            (zone entity.name.tag.id.haml
+                (match
+                    (regex [#[\w-]+])))
+            (zone meta.section.attributes.haml
+                (start
+                    (regex [\{(?=.*\}|.*\|\s*$)]))
+                (end
+                    (regex [\}|$|^(?!.*\|\s*$)]))
+                (subzones
+                    (include source.ruby.rails)
+                    (include @continuation)))
+            (zone meta.section.object.haml
+                (start
+                    (regex [\[(?=.*\]|.*\|\s*$)]))
+                (end
+                    (regex `\]|$|^(?!.*\|\s*$)`))
+                (subzones
+                    (include source.ruby.rails)
+                    (include @continuation)))
+            (include @rubyline)
+            (zone punctuation.terminator.tag.haml
+                (match /))))
+    (zone
+        (match
+            (regex [^\s*(\\.)]
+                (1 meta.escape.haml))))
+    (zone
+        (start
+            (regex [^\s*(?==|-|~)]))
+        (end
+            (regex $))
+        (subzones
+            (include @rubyline))))
+
+(collection continuation
+    (zone
+        (match
+            (regex [(\|)\s*\n]
+                (1 punctuation.separator.continuation.haml)))))
+
+(collection interpolated_ruby
+    (zone source.ruby.embedded.source
+        (match
+            (regex [#\{(\})]
+                (0 punctuation.section.embedded.ruby)
+                (1 source.ruby.embedded.source.empty))))
+    (zone source.ruby.embedded.source
+        (start
+            (regex [#\{]
+                (0 punctuation.section.embedded.ruby)))
+        (end
+            (regex [(\})]
+                (0 punctuation.section.embedded.ruby)))
+        (subzones
+            (include @nest_curly_and_self)
+            (include source.ruby)))
+    (zone variable.other.readwrite.instance.ruby
+        (match
+            (regex [(#@)[a-zA-Z_]\w*]
+                (1 punctuation.definition.variable.ruby))))
+    (zone variable.other.readwrite.class.ruby
+        (match
+            (regex [(#@@)[a-zA-Z_]\w*]
+                (1 punctuation.definition.variable.ruby))))
+    (zone variable.other.readwrite.global.ruby
+        (match
+            (regex [(#\$)[a-zA-Z_]\w*]
+                (1 punctuation.definition.variable.ruby)))))
+
+(collection rubyline
+    (zone meta.line.ruby.haml
+        (start
+            (regex =|-|~))
+        (end
+            (regex [((do|\{)( \|[^|]+\|)?)$|$|^(?!.*\|\s*$)]
+                (1 source.ruby.embedded.html)
+                (2 keyword.control.ruby.start-block)))
+        (subzones
+            (zone comment.line.number-sign.ruby
+                (match
+                    (regex [#.*$])))
+            (include source.ruby.rails)
+            (include @continuation))))
+
+(collection nest_curly_and_self
+    (zone
+        (start
+            (regex [\{]
+                (0 punctuation.section.scope.ruby)))
+        (end
+            (regex [\}]
+                (0 punctuation.section.scope.ruby)))
+        (subzones
+            (include @nest_curly_and_self)))
+    (include source.ruby))
